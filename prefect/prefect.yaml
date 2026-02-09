@@ -1,0 +1,22 @@
+deployments:
+  - name: DRAP
+    entrypoint: flows/d_rap_extract.py:rap_extract_flow
+    work_pool:
+      name: local-pool
+    schedules:
+      - interval: 60
+        timezone: UTC
+    pull:
+      - prefect.deployments.steps.set_working_directory:
+          directory: /opt  # Container path, not host path
+  
+  - name: DRAP Cleanup
+    entrypoint: flows/db_maintain.py:db_maintenance_flow
+    work_pool:
+      name: local-pool
+    schedules:
+      - interval: 1440 
+        timezone: UTC
+    pull:
+      - prefect.deployments.steps.set_working_directory:
+          directory: /opt  # Container path, not host path

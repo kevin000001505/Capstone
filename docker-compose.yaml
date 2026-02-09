@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: prefect
+      POSTGRES_PASSWORD: prefect
+      POSTGRES_DB: prefect
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/initdb:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prefect"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  prefect-server:
+    image: prefecthq/prefect:3-latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:prefect@postgres:5432/prefect
+      PREFECT_SERVER_API_HOST: 0.0.0.0
+      PREFECT_MESSAGING_BROKER: prefect_redis.messaging
+      PREFECT_MESSAGING_CACHE: prefect_redis.messaging
+      PREFECT_REDIS_MESSAGING_HOST: redis
+      PREFECT_REDIS_MESSAGING_PORT: 6379
+      PREFECT_REDIS_MESSAGING_DB: 0
+    command: prefect server start --no-services
+    ports:
+      - "4200:4200"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:4200/api/health', timeout=1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  prefect-services:
+    image: prefecthq/prefect:3-latest
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+    environment:
+      PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:prefect@postgres:5432/prefect
+      PREFECT_MESSAGING_BROKER: prefect_redis.messaging
+      PREFECT_MESSAGING_CACHE: prefect_redis.messaging
+      PREFECT_REDIS_MESSAGING_HOST: redis
+      PREFECT_REDIS_MESSAGING_PORT: 6379
+      PREFECT_REDIS_MESSAGING_DB: 0
+    command: prefect server services start
+
+  prefect-worker:
+    build:
+      context: ./prefect
+      dockerfile: Dockerfile
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      DATABASE_URL: postgresql://prefect:prefect@postgres:5432/prefect
+    command: prefect worker start --pool local-pool
+    restart: on-failure
+    volumes:
+      - ./prefect/flows:/opt/flows
+      - ./shared:/opt/shared
+
+  # fastapi:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     prefect-server:
+  #       condition: service_healthy
+  #   environment:
+  #     DATABASE_URL: postgresql://prefect:prefect@postgres:5432/prefect
+  #     PREFECT_API_URL: http://prefect-server:4200/api
+  #     REDIS_URL: redis://redis:6379/0
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./backend/app:/app/app
+  #     - ./shared:/app/shared
+  #   command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data: 
+  redis_data:
