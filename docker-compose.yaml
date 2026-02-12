@@ -132,20 +132,23 @@ services:
     build:
       context: .
       dockerfile: docker/api/Dockerfile
+    container_name: fastapi
     depends_on:
       postgis:
         condition: service_healthy
-      prefect-server:
-        condition: service_healthy
     environment:
-      PREFECT_API_URL: http://prefect-server:4200/api
-      REDIS_URL: redis://redis:6379/0
+      DB_HOST: postgis
+      DB_PORT: 5432
+      DB_NAME: app
+      DB_USER: developer
+      DB_PASSWORD: ${DEVELOPER_PASSWORD}
+      PYTHONPATH: /app
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/api:/api
-      - ./shared:/api/shared
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./backend/api:/app
+      - ./shared:/app/shared
+    # DO NOT add command here - let Dockerfile CMD handle it
     networks:
       - prefect_network
       - data_network

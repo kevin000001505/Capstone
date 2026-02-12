@@ -1,67 +1,60 @@
 import asyncpg
-from contextlib import asynccontextmanager
+import os
+from typing import Optional
 
-# Singleton pool instance
-_pool = None
+# Initialize connection pool
+connection_pool: Optional[asyncpg.Pool] = None
 
-
-async def get_pool():
-    """Get or create the connection pool."""
-    global _pool
-    if _pool is None:
-        _pool = await asyncpg.create_pool(
-            host="postgis",
-            port=5432,
-            user="developer",
-            password="zxc123",
-            database="app",
-            min_size=2,
-            max_size=10,
-            command_timeout=60,
+async def init_connection_pool():
+    """Initialize the PostgreSQL connection pool."""
+    global connection_pool
+    if connection_pool is None:
+        connection_pool = await asyncpg.create_pool(
+            host=os.getenv("DB_HOST", "localhost"),
+            port=int(os.getenv("DB_PORT", "5432")),
+            database=os.getenv("DB_NAME", "app"),
+            user=os.getenv("DB_USER", "prefect"),
+            password=os.getenv("DB_PASSWORD", "prefect"),
+            min_size=1,
+            max_size=20,
         )
-    return _pool
 
-
-@asynccontextmanager
-async def get_connection():
-    """Get a connection from the pool."""
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        yield conn
-
-
-async def ensure_table_exists(conn, table_name: str, create_sql: str):
-    """Check if table exists, create if it doesn't."""
-    exists = await conn.fetchval(
-        """
-        SELECT EXISTS (
-            SELECT FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_name = $1
-        );
-    """,
-        table_name,
-    )
-
-    if not exists:
-        await conn.execute(create_sql)
-        return False
-    return True
-
-
-async def close_pool():
-    """Close the pool (call on shutdown)."""
-    global _pool
-    if _pool:
-        await _pool.close()
-        _pool = None
-
-
-async def cleanup_old_data(conn, table_name: str, older_than_days: int):
-    """Delete records older than a certain number of days."""
-    await conn.execute(
-        f"""
-        DELETE FROM {table_name}
-        WHERE observed_at < NOW() - INTERVAL '{older_than_days} days';
+def get_connection():
     """
-    )
+    Get a connection from the pool.
+    Use within async context manager: async with get_connection() as conn:
+    
+    Not async - returns the context manager directly.
+    """
+    if connection_pool is None:
+        raise RuntimeError("Connection pool not initialized. Call init_connection_pool() first.")
+    
+    return connection_pool.acquire()
+
+async def ensure_table_exists(table_name: str) -> bool:
+    """Check if a table exists in the database."""
+    async with connection_pool.acquire() as conn:
+        result = await conn.fetchval("""
+            SELECT EXISTS (
+                SELECT FROM pg_tables
+                WHERE tablename = $1
+            )
+        """, table_name)
+        return result
+
+async def cleanup_old_data(table_name: str, days: int = 30) -> int:
+    """Remove data older than specified days from a table."""
+    async with connection_pool.acquire() as conn:
+        result = await conn.execute(f"""
+            DELETE FROM {table_name}
+            WHERE time < NOW() - INTERVAL '{days} days'
+        """)
+        deleted = int(result.split()[-1]) if result else 0
+        return deleted
+
+async def close_all_connections():
+    """Close all connections in the pool."""
+    global connection_pool
+    if connection_pool:
+        await connection_pool.close()
+        connection_pool = None
