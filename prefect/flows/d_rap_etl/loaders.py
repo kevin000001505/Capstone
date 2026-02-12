@@ -2,8 +2,6 @@ import asyncpg
 from datetime import datetime, timezone
 
 create_table_sql = """
-CREATE EXTENSION IF NOT EXISTS postgis;
-
 CREATE TABLE IF NOT EXISTS drap_region (
     observed_at timestamptz NOT NULL,
     location GEOGRAPHY(Point, 4326) NOT NULL,

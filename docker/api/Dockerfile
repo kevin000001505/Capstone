@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+WORKDIR /api
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -9,14 +9,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY backend/requirements.txt .
+COPY docker/api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY backend/ .
-
-# Copy shared utilities
-COPY shared /app/shared
 
 # Expose port
 EXPOSE 8000

@@ -1,25 +1,23 @@
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /opt/prefect-app
+
 deployments:
   - name: DRAP
     entrypoint: flows/d_rap_extract.py:rap_extract_flow
     work_pool:
-      name: local-pool
+      name: NOAA-pool
     schedules:
-      - interval: 3600 # 1 hour
+      - interval: 60 # 1 minute
         timezone: UTC
-    pull:
-      - prefect.deployments.steps.set_working_directory:
-          directory: /opt  # Container path, not host path
   
   - name: DRAP Cleanup
     entrypoint: flows/db_maintain.py:db_maintenance_flow
     work_pool:
-      name: local-pool
+      name: NOAA-pool
     schedules:
       - interval: 86400 # 1 day
         timezone: UTC
-    pull:
-      - prefect.deployments.steps.set_working_directory:
-          directory: /opt  # Container path, not host path
   
   - name: opensky-ingester
     version: null
@@ -27,14 +25,11 @@ deployments:
     description: "Fetches live flight data using pyopensky every 2 minutes"
     entrypoint: flows/flights_capture.py:ingest_flow
     work_pool:
-      name: local-pool
+      name: flight-pool
       work_queue_name: default
       job_variables: {}
     schedule:
       interval: 120
-    pull:
-      - prefect.deployments.steps.set_working_directory:
-          directory: /opt 
 
   - name: flightdata-daily-maintenance
     version: null
@@ -42,12 +37,9 @@ deployments:
     description: "Checks credit limits for changes and cleans DB"
     entrypoint: flows/flights_capture.py:maintenance_flow
     work_pool:
-      name: local-pool
+      name: flight-pool
       work_queue_name: default
       job_variables: {}
     schedule:
       cron: "0 0 * * *"
       timezone: "UTC"
-    pull:
-      - prefect.deployments.steps.set_working_directory:
-          directory: /opt 

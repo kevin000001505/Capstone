@@ -10,10 +10,10 @@ async def get_pool():
     global _pool
     if _pool is None:
         _pool = await asyncpg.create_pool(
-            host="postgres",
+            host="postgis",
             port=5432,
             user="developer",
-            password="0000",
+            password="zxc123",
             database="app",
             min_size=2,
             max_size=10,

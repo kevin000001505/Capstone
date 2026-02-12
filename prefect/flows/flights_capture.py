@@ -7,13 +7,6 @@ from prefect.blocks.system import Secret
 from prefect.variables import Variable
 from pyopensky.rest import REST
 
-
-async def get_db_pool():
-    """Creates a temporary connection pool from Prefect Secret."""
-    db_url_block = await Secret.aload("flight-db-url")
-    return await asyncpg.create_pool(db_url_block.get())
-
-
 def clean_row(row):
     """
     Maps OpenSky Arrow-backed DataFrame row -> Native Python Tuple for AsyncPG.
@@ -91,7 +84,6 @@ async def insert_batch(df):
     if not records:
         return
 
-    # pool = await get_db_pool()
     async with get_connection() as conn:
         first_ts = records[0][0]
         await conn.execute("SELECT create_partition_if_missing($1)", first_ts)
@@ -113,16 +105,13 @@ async def insert_batch(df):
 @task
 async def cleanup_db():
     logger = get_run_logger()
-    pool = await get_db_pool()
 
-    retention_days = await Variable[int].aget("flight_data_retention_days", default=7)
+    retention_days = await Variable[int].aget("flight_data_retention_days", default=90)
     cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
 
-    async with pool.acquire() as conn:
+    async with get_connection() as conn:
         res = await conn.execute("DELETE FROM flight_states WHERE time < $1", cutoff)
         logger.info(f"Cleaned old data: {res}")
-
-    await pool.close()
 
 
 @flow(name="Ingest Flight Data", log_prints=True)
