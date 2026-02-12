@@ -106,7 +106,7 @@ async def insert_batch(df):
 async def cleanup_db():
     logger = get_run_logger()
 
-    retention_days = await Variable[int].aget("flight_data_retention_days", default=90)
+    retention_days = await Variable[int].aget("flight_data_retention_days", default=3)
     cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
 
     async with get_connection() as conn:

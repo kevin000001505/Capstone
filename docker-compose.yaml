@@ -24,6 +24,7 @@ services:
     volumes:
       - postgis_data:/var/lib/postgresql/data
       - ./docker/db-init-scripts/init.sh:/docker-entrypoint-initdb.d/init.sh
+      # - ./docker/db-init-scripts/init.sql:/docker-entrypoint-initdb.d/01-init.sql 
     ports:
       - "5432:5432"
     healthcheck:
@@ -64,21 +65,18 @@ services:
       PREFECT_REDIS_MESSAGING_HOST: redis
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
-    # command: prefect server start --no-services
+      PREFECT_UI_API_URL: /api
     command: prefect server start --host 0.0.0.0
     volumes:
       - prefect_home:/root/.prefect
     networks:
       - prefect_network
-    # ports:
-    #   - "4200:4200"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:4200/api/health', timeout=1)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-
   prefect-services:
     image: prefecthq/prefect:3-latest
     depends_on:
@@ -112,10 +110,11 @@ services:
       - -c
       - |
         cd /opt/prefect-app
-        prefect deploy --all
-        cd flows
         prefect work-pool create NOAA-pool --type process --overwrite
         prefect work-pool create flight-pool --type process --overwrite
+        
+        prefect deploy --all &
+
         prefect worker start --pool NOAA-pool &
         prefect worker start --pool flight-pool &
         wait

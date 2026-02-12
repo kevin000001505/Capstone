@@ -40,6 +40,9 @@ deployments:
       name: flight-pool
       work_queue_name: default
       job_variables: {}
+    # schedules:
+    #   - interval: 86400 # 1 day
+    #     timezone: UTC
     schedule:
       cron: "0 0 * * *"
       timezone: "UTC"
