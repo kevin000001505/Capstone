@@ -92,7 +92,7 @@ async def rap_extract_flow():
     else:
         logger.info("New data detected. Loading...")
         await load_data(df_long)
-        await Variable.set("data_last_updated", current_updated)
+        await Variable.set("data_last_updated", current_updated, overwrite=True)
         logger.info("Metadata: %s", metadata)
         logger.info("Wide DataFrame:\n%s", df_wide.head())
         logger.info("Long DataFrame:\n%s", df_long.head())

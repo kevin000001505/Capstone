@@ -4,7 +4,7 @@ deployments:
     work_pool:
       name: local-pool
     schedules:
-      - interval: 60
+      - interval: 3600 # 1 hour
         timezone: UTC
     pull:
       - prefect.deployments.steps.set_working_directory:
@@ -15,8 +15,39 @@ deployments:
     work_pool:
       name: local-pool
     schedules:
-      - interval: 1440 
+      - interval: 86400 # 1 day
         timezone: UTC
     pull:
       - prefect.deployments.steps.set_working_directory:
           directory: /opt  # Container path, not host path
+  
+  - name: opensky-ingester
+    version: null
+    tags: ["ingest", "pyopensky"]
+    description: "Fetches live flight data using pyopensky every 2 minutes"
+    entrypoint: flows/flights_capture.py:ingest_flow
+    work_pool:
+      name: local-pool
+      work_queue_name: default
+      job_variables: {}
+    schedule:
+      interval: 120
+    pull:
+      - prefect.deployments.steps.set_working_directory:
+          directory: /opt 
+
+  - name: flightdata-daily-maintenance
+    version: null
+    tags: ["maintenance"]
+    description: "Checks credit limits for changes and cleans DB"
+    entrypoint: flows/flights_capture.py:maintenance_flow
+    work_pool:
+      name: local-pool
+      work_queue_name: default
+      job_variables: {}
+    schedule:
+      cron: "0 0 * * *"
+      timezone: "UTC"
+    pull:
+      - prefect.deployments.steps.set_working_directory:
+          directory: /opt 

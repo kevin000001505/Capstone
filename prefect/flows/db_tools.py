@@ -12,8 +12,8 @@ async def get_pool():
         _pool = await asyncpg.create_pool(
             host="postgres",
             port=5432,
-            user="prefect",
-            password="prefect",
+            user="developer",
+            password="0000",
             database="app",
             min_size=2,
             max_size=10,
