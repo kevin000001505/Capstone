@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils.db_tools import get_connection, get_pool, close_all_connections
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime
 import logging
 import json
 from contextlib import asynccontextmanager
@@ -63,12 +64,11 @@ class FlightStatesResponse(BaseModel):
     total_time_ms: float  # Add total endpoint time
 
 class DRAPResponse(BaseModel):
-    type: str
-    timestamp: str
+    timestamp: datetime
     count: int
-    features: List
-    query_time_ms: float  # Add timing
-    total_time_ms: float
+    points: List[List[float]]   # [lat, lon, intensity]
+    query_time_ms: Optional[float] = None
+    total_time_ms: Optional[float] = None
 
 @app.get("/")
 async def root():
@@ -156,59 +156,54 @@ async def get_latest_flight_states():
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @app.get("/api/v1/drap/latest", response_model=DRAPResponse)
-async def get_latest_drap_geojson():
+async def latest_drap():
     start_time = time.time()
     
     sql = """
     WITH latest_time AS (
-        SELECT MAX(observed_at) AS max_ts
-        FROM drap_region
+      SELECT MAX(observed_at) AS max_ts
+      FROM drap_region
     ),
-    features AS (
-        SELECT jsonb_build_object(
-            'type','Feature',
-            'geometry', ST_AsGeoJSON(d.location::geometry)::jsonb,
-            'properties', jsonb_build_object(
-                'timestamp', d.observed_at,
-                'frequency', d.frequency_mhz
-            )
-        ) AS feature
-        FROM drap_region d
-        CROSS JOIN latest_time lt
-        WHERE d.observed_at = lt.max_ts
+    latest_rows AS (
+      SELECT d.observed_at, d.absorption, d.location
+      FROM drap_region d
+      JOIN latest_time lt ON d.observed_at = lt.max_ts
+    ),
+    pts AS (
+      SELECT jsonb_build_array(
+        ST_Y(location::geometry),          -- lat
+        ST_X(location::geometry),          -- lon
+        COALESCE(absorption, 0)         -- intensity (already normalized)
+      ) AS p
+      FROM latest_rows
     )
     SELECT jsonb_build_object(
-        'type', 'FeatureCollection',
-        'timestamp', (SELECT max_ts FROM latest_time),
-        'count', (SELECT COUNT(*) FROM features),
-        'features', COALESCE(jsonb_agg(feature), '[]'::jsonb)
-    ) AS fc
-    FROM features;
+      'timestamp', (SELECT max_ts FROM latest_time),
+      'count', (SELECT COUNT(*) FROM latest_rows),
+      'points', COALESCE(jsonb_agg(p), '[]'::jsonb)
+    ) AS payload
+    FROM pts;
     """
 
     try:
         query_start = time.time()
         
         async with get_connection() as conn:
-            fc = await conn.fetchval(sql)
+            payload = await conn.fetchval(sql)
 
         query_time_ms = (time.time() - query_start) * 1000
-        
-        # asyncpg can return jsonb as str depending on codec/settings
-        if isinstance(fc, str):
-            fc = json.loads(fc)
 
-        if not fc or fc.get("count", 0) == 0 or fc.get("timestamp") is None:
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+
+        if not payload or payload.get("count", 0) == 0 or payload.get("timestamp") is None:
             raise HTTPException(status_code=404, detail="No D-RAP data available")
 
         total_time_ms = (time.time() - start_time) * 1000
-        
-        logger.info(f"Retrieved {fc.get('count', 0)} D-RAP features - Query: {query_time_ms:.2f}ms, Total: {total_time_ms:.2f}ms")
-        
-        fc["query_time_ms"] = round(query_time_ms, 2)
-        fc["total_time_ms"] = round(total_time_ms, 2)
-        
-        return fc
+        payload["query_time_ms"] = round(query_time_ms, 2)
+        payload["total_time_ms"] = round(total_time_ms, 2)
+
+        return payload
 
     except HTTPException:
         raise
