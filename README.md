@@ -77,8 +77,8 @@ This repository provides a standardized directory structure for **George Mason U
 
 **Database Connection:**
 - Host: `postgis` container
-- Database: `app`
-- User: `developer`
+- Database: `${DEVELOPER_DB}`
+- User: `${DEVELOPER_USER}`
 - Password: `${DEVELOPER_PASSWORD}` (from environment)
 - Port: 8000 (exposed)
 
@@ -189,14 +189,10 @@ PYOPENSKY_SETTINGS=/path/to/pyopensky/settings.conf
 - Connection String: `postgresql+asyncpg://prefect:prefect@postgis:5432/prefect`
 
 **Application Database:**
-- Database: `${POSTGRES_DB}`
-- User: `${POSTGRES_USER}`
+- Database: `${DEVELOPER_DB}`
+- User: `${DEVELOPER_USER}`
 - Password: `${DEVELOPER_PASSWORD}`
-- Connection String: `postgresql://developer:${DEVELOPER_PASSWORD}@postgis:5432/app`
-
-**Read-Only User:**
-- User: `readonly`
-- Password: `${READONLY_PASSWORD}`
+- Connection String: `postgresql://${DEVELOPER_USER}:${DEVELOPER_PASSWORD}@postgis:5432/${DEVELOPER_DB}`
 
 ---
 
