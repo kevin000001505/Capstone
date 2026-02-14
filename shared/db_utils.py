@@ -14,7 +14,7 @@ async def init_connection_pool():
             port=5432,
             user=os.getenv("DEVELOPER_USER"),
             password=os.getenv("DEVELOPER_PASSWORD"),
-            database=os.getenv("POSTGRES_DB"),
+            database=os.getenv("DEVELOPER_DB"),
             min_size=2,
             max_size=10,
             command_timeout=60,

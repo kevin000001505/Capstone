@@ -107,6 +107,9 @@ services:
     environment:
       PREFECT_API_URL: http://prefect-server:4200/api
       DATABASE_URL: postgresql://developer:${DEVELOPER_PASSWORD}@postgis:5432/app
+      DEVELOPER_USER: ${DEVELOPER_USER}
+      DEVELOPER_PASSWORD: ${DEVELOPER_PASSWORD}
+      DEVELOPER_DB: ${DEVELOPER_DB}
     command:
       - bash
       - -c
@@ -138,16 +141,14 @@ services:
       postgis:
         condition: service_healthy
     environment:
-      DB_HOST: postgis
-      DB_PORT: 5432
-      DB_NAME: app
-      DB_USER: developer
-      DB_PASSWORD: ${DEVELOPER_PASSWORD}
+      DEVELOPER_USER: ${DEVELOPER_USER}
+      DEVELOPER_PASSWORD: ${DEVELOPER_PASSWORD}
+      DEVELOPER_DB: ${DEVELOPER_DB}
       PYTHONPATH: /app
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/api:/app
+      - ./src/api:/app
       - ./shared:/app/shared
     networks:
       - prefect_network
