@@ -10,14 +10,16 @@ async def init_connection_pool():
     global connection_pool
     if connection_pool is None:
         connection_pool = await asyncpg.create_pool(
-            host=os.getenv("DB_HOST", "localhost"),
-            port=int(os.getenv("DB_PORT", "5432")),
-            database=os.getenv("DB_NAME", "app"),
-            user=os.getenv("DB_USER", "prefect"),
-            password=os.getenv("DB_PASSWORD", "prefect"),
-            min_size=1,
-            max_size=20,
+            host="postgis",
+            port=5432,
+            user=os.getenv("DEVELOPER_USER"),
+            password=os.getenv("DEVELOPER_PASSWORD"),
+            database=os.getenv("POSTGRES_DB"),
+            min_size=2,
+            max_size=10,
+            command_timeout=60,
         )
+    return connection_pool
 
 def get_connection():
     """

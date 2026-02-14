@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize connection pool
+    
     await get_pool()
     logger.info("Database connection pool initialized")
     yield
-    # Shutdown: Close connection pool
+    
     await close_all_connections()
     logger.info("Database connection pool closed")
 
@@ -118,7 +118,6 @@ async def get_latest_flight_states():
             if not rows:
                 raise HTTPException(status_code=404, detail="No flight data available")
             
-            # Get timestamp from first row
             latest_time = rows[0]['time']
             
             flights = []

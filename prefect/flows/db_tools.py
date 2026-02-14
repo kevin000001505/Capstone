@@ -1,5 +1,6 @@
 import asyncpg
 from contextlib import asynccontextmanager
+import os
 
 # Singleton pool instance
 _pool = None
@@ -12,9 +13,9 @@ async def get_pool():
         _pool = await asyncpg.create_pool(
             host="postgis",
             port=5432,
-            user="developer",
-            password="zxc123",
-            database="app",
+            user=os.getenv("DEVELOPER_USER"),
+            password=os.getenv("DEVELOPER_PASSWORD"),
+            database=os.getenv("POSTGRES_DB"),
             min_size=2,
             max_size=10,
             command_timeout=60,

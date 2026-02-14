@@ -19,6 +19,8 @@ services:
       - POSTGRES_USER=prefect
       - POSTGRES_PASSWORD=prefect
       - POSTGRES_DB=prefect
+      - DEVELOPER_DB=${DEVELOPER_DB}
+      - DEVELOPER_USER=${DEVELOPER_USER}
       - DEVELOPER_PASSWORD=${DEVELOPER_PASSWORD}
       - READONLY_PASSWORD=${READONLY_PASSWORD}
     volumes:
@@ -147,7 +149,6 @@ services:
     volumes:
       - ./backend/api:/app
       - ./shared:/app/shared
-    # DO NOT add command here - let Dockerfile CMD handle it
     networks:
       - prefect_network
       - data_network
