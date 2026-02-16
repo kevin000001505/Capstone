@@ -1,0 +1,5 @@
+requests
+asyncpg
+pandas
+pyopensky
+numpy

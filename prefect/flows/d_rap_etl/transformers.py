@@ -1,5 +1,3 @@
-import re
-import requests
 import pandas as pd
 
 
@@ -243,7 +241,7 @@ def parse_drap_data(data_string):
     df_wide.columns.name = "Longitude"
 
     df_long = df_wide.reset_index().melt(
-        id_vars="Latitude", var_name="Longitude", value_name="Frequency_MHz"
+        id_vars="Latitude", var_name="Longitude", value_name="Absorption"
     )
 
     return metadata, df_wide, df_long

@@ -1,0 +1,8 @@
+*
+!docker/
+!prefect/
+!src/
+!tests
+**/__pycache__
+**/*.pyc
+**/.ipynb_checkpoints
