@@ -1,4 +1,4 @@
-# GMU DAEN Capstone Project - GitHub Repository Structure
+# GMU DAEN Capstone Project - Space Weather
 
 ## Overview
 
@@ -48,7 +48,6 @@ This repository provides a standardized directory structure for **George Mason U
 - **postgis**: PostgreSQL database with PostGIS extension (user: `prefect`/`developer`, database: `prefect`/`app`)
 - **redis**: Message broker for Prefect
 - **prefect-server**: Prefect orchestration server
-- **prefect-services**: Prefect background services
 - **prefect-worker**: Executes Prefect flows (NOAA-pool, flight-pool)
 - **fastapi**: REST API server
 - **nginx**: Reverse proxy on port 4200
@@ -70,7 +69,7 @@ This repository provides a standardized directory structure for **George Mason U
 
 ---
 
-### `backend/`
+### `src/`
 **Purpose:** Backend application code.
 
 - **`api/`**: FastAPI application with REST endpoints, route definitions, and request handlers.
@@ -105,9 +104,7 @@ This repository provides a standardized directory structure for **George Mason U
 - Consider using secret management tools (Docker secrets, AWS Secrets Manager, etc.)
 
 **Common Files:**
-- API keys
 - Database credentials
-- OAuth tokens
 - SSL certificates
 - PyOpenSky settings: `${PYOPENSKY_SETTINGS}` mounted to `/root/.config/pyopensky/settings.conf`
 
@@ -119,7 +116,7 @@ This repository provides a standardized directory structure for **George Mason U
 Specifies files and directories that Git should ignore (e.g., `__pycache__/`, `*.pyc`, `data/`, `logs/`, `.env`, `secrets/`, virtual environments).
 
 ### `LICENSE`
-MIT License - This project is open source software licensed under the MIT License.
+Apache License - This project is open source software licensed under the Apache License.
 
 ### `README.md`
 This file. Provides an overview of the project, setup instructions, and directory structure documentation.
@@ -140,6 +137,7 @@ Defines multi-container Docker applications with the following services:
 - Docker and Docker Compose
 - Git
 - Environment variables configured in `.env` file
+- Opensky crediential
 
 ### Required Environment Variables
 
@@ -167,7 +165,7 @@ PYOPENSKY_SETTINGS=/path/to/pyopensky/settings.conf
 
 3. **Start all services with Docker Compose:**
    ```bash
-   docker-compose up --build
+   docker compose up -d --build
    ```
 
 4. **Access the services:**
@@ -231,7 +229,7 @@ PYOPENSKY_SETTINGS=/path/to/pyopensky/settings.conf
 ## Contributing
 
 Please follow these guidelines:
-- Follow PEP 8 style guidelines for Python code
+- Follow PEP 8 style guidelines for Python code(package black can solve it)
 - Write meaningful commit messages
 - Add documentation for new features
 - Test changes before submitting pull requests
@@ -249,38 +247,29 @@ Please follow these guidelines:
 
 ---
 
-## License
+# Apache License
+Version 2.0, January 2004  
+http://www.apache.org/licenses/
 
-MIT License
+Copyright 2026 GMU DAEN Capstone Team
 
-Copyright (c) 2026 GMU DAEN Capstone Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+http://www.apache.org/licenses/LICENSE-2.0
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
----
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 ## Contact
 
 For questions about this project or the DAEN Capstone program, contact:
-- Project Team: [Team Email/Contact]
-- Faculty Advisor: [Advisor Name and Email]
-- Program Coordinator: [Coordinator Contact]
+- Project Team: Space Weather
+- Program Coordinator: Professor Schmidt
 
 ---
 
